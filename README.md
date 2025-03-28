@@ -14,7 +14,7 @@ Recruiters can also create virtual interview sessions and send direct messages t
   NEXT_PUBLIC_STREAM_API_KEY=<your_Stream_API_key>
   STREAM_SECRET_KEY=<your_Stream_Secret_key>
   ```
-- Set up Firebase within the app and copy your Firebase config into the `lib/firebase.ts` file.
+- Set up Firebase within the app and copy your Firebase config into the [`lib/firebase.ts`](https://github.com/dha-stix/stream-job-interview-app/blob/main/src/lib/firebase.example.ts) file.
 - Set up Firebase Storage, Email and Password Authentication, and Firestore.
 - Start the development server by running `npm run dev`.
 

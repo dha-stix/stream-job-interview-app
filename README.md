@@ -1,4 +1,4 @@
-## Job Application and Interview Application
+## Job Application and Interview Application 
 A Job and interview platform that lets recruiters post jobs and job applicants apply using their profiles. 
 Recruiters can also create virtual interview sessions and send direct messages to applicants on the app using Stream.
 

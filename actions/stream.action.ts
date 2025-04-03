@@ -31,6 +31,7 @@ export const createStreamUser = async (
 	return user;
 };
 
+
 export async function createChannel({
 	recruiterId,
 	applicant,

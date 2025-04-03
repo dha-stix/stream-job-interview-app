@@ -22,7 +22,7 @@ export default function StreamChatUI({ user }: { user: JobSeekerFirebase | Recru
 	return (
 		<Chat client={client}>
 			<div className='chat-container'>
-				{/* Channel List */}
+				{/* -- Channel List -- */}
 				<div className='channel-list'>
 					<ChannelList
 						sort={{ last_message_at: -1 }}
@@ -31,7 +31,7 @@ export default function StreamChatUI({ user }: { user: JobSeekerFirebase | Recru
 					/>
 				</div>
 
-				{/* Messages Panel */}
+				{/* -- Messages Panel -- */}
 				<div className='chat-panel'>
 					<Channel>
 						<Window>

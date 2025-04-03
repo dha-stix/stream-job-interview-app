@@ -137,7 +137,7 @@ export default function Register() {
 					{buttonClicked ? "Registering..." : "Register"}
 				</button>
 				<p className=' opacity-60 text-center'>
-					Already have an account?
+					Already have an account? {" "}
 					<Link href='/recruiter/login' className='text-blue-800'>
 						Sign in
 					</Link>

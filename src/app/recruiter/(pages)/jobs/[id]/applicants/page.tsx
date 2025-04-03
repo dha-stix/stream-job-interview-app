@@ -247,10 +247,6 @@ const ScheduleInterviewModal = ({ setOpenCallModal, applicantId, recruiterId }: 
 					members: [{ user_id: applicantId }, { user_id: recruiterId }],
 				},
 			});
-			 const { status } = await updateJobStatus(applicantId, "Interviewing");
-			 if (status !== 200) {
-				 throw new Error("Failed to update the status");
-			 }
 			 toast("Call Scheduled", {
 				description: `The call has been scheduled for ${dateTime}`,
 			});

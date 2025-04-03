@@ -44,15 +44,13 @@ export const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
 			return null;
 		}
 
-		const userObj = {
+		return new StreamVideoClient({
+			apiKey,
+			user: {
 			id: user.uid,
 			name: jobSeekerSnap.data()?.name || recruiterSnap.data()?.name,
 			image: jobSeekerSnap.data()?.image || recruiterSnap.data()?.image,
-		};
-
-		return new StreamVideoClient({
-			apiKey,
-			user: userObj,
+		},
 			tokenProvider: () => tokenProvider(user.uid),
 		});
 	}, [user]);

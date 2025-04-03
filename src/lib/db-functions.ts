@@ -22,6 +22,7 @@ const formatDate = (dateString: string): string => {
 	});
 };
 
+// --- 👇🏻 Recruiter functions 👇🏻 ---
 export const createJobPosting = async (
 	form: FormData,
 	user: RecruiterFirebase
@@ -77,6 +78,85 @@ export const deleteJobPosting = async (doc_id: string) => {
 	}
 };
 
+export const getRecruiterJobs = async (recruiterId: string) => {
+	const q = query(collection(db, "jobs"), where("id", "==", recruiterId));
+	const querySnapshot = await getDocs(q);
+	const jobs: JobProps[] = [];
+	querySnapshot.forEach((doc) => {
+		jobs.push({ doc_id: doc.id, ...doc.data() } as JobProps);
+	});
+	return jobs;
+};
+
+export const getJobApplicants = async (jobId: string) => {
+	const docRef = doc(db, "jobs", jobId);
+	const docSnap = await getDoc(docRef);
+
+	if (!docSnap.exists()) {
+		return {
+			code: "job/failed",
+			status: 404,
+			message: "Job does not exist",
+			applicants: [],
+		};
+	}
+	const { applications } = docSnap.data() as JobProps;
+	const applicants: ApplicationProps[] = [];
+
+	for (const application of applications) {
+		const applicationRef = doc(db, "applications", application.applicationId);
+		const applicationSnap = await getDoc(applicationRef);
+		if (applicationSnap.exists()) {
+			applicants.push({
+				id: application.applicationId,
+				...applicationSnap.data(),
+			} as ApplicationProps);
+		}
+	}
+
+	return {
+		code: "job/success",
+		status: 200,
+		message: "Job applicants retrieved successfully",
+		applicants,
+	};
+};
+
+export const handleRejectApplication = async (
+	application: ApplicationProps
+) => {
+	const applicationRef = doc(db, "applications", application.id);
+	await deleteDoc(applicationRef);
+
+	const jobRef = doc(db, "jobs", application.jobID);
+	await updateDoc(jobRef, {
+		applications: arrayRemove({
+			applicationId: application.id,
+			userId: application.user.id,
+		}),
+	});
+
+	return {
+		code: "job/success",
+		status: 200,
+		message: "Application rejected successfully",
+	};
+};
+
+export const updateJobStatus = async (
+	applicationId: string,
+	status: ApplicationProps["status"]
+) => {
+	const applicationRef = doc(db, "applications", applicationId);
+	await updateDoc(applicationRef, { status });
+	return {
+		code: "job/success",
+		status: 200,
+		message: "Application status updated successfully",
+	};
+};
+
+// --- 👇🏻 Job Seeker functions 👇🏻 ---
 export const getJobFeed = async (user: JobSeekerFirebase) => {
 	const q = query(
 		collection(db, "jobs"),
@@ -92,16 +172,6 @@ export const getJobFeed = async (user: JobSeekerFirebase) => {
 		jobs.push(data);
 	});
 
-	return jobs;
-};
-
-export const getRecruiterJobs = async (recruiterId: string) => {
-	const q = query(collection(db, "jobs"), where("id", "==", recruiterId));
-	const querySnapshot = await getDocs(q);
-	const jobs: JobProps[] = [];
-	querySnapshot.forEach((doc) => {
-		jobs.push({ doc_id: doc.id, ...doc.data() } as JobProps);
-	});
 	return jobs;
 };
 
@@ -168,97 +238,32 @@ export const applyForJob = async (
 	};
 };
 
-export const getJobApplicants = async (jobId: string) => {
-	const docRef = doc(db, "jobs", jobId);
-	const docSnap = await getDoc(docRef);
-
-	if (!docSnap.exists()) {
-		return {
-			code: "job/failed",
-			status: 404,
-			message: "Job does not exist",
-			applicants: [],
-		};
-	}
-	const { applications } = docSnap.data() as JobProps;
-	const applicants: ApplicationProps[] = [];
-
-	for (const application of applications) {
-		const applicationRef = doc(db, "applications", application.applicationId);
-		const applicationSnap = await getDoc(applicationRef);
-		if (applicationSnap.exists()) {
-			applicants.push({
-				id: application.applicationId,
-				...applicationSnap.data(),
-			} as ApplicationProps);
-		}
-	}
-
-	return {
-		code: "job/success",
-		status: 200,
-		message: "Job applicants retrieved successfully",
-		applicants,
-	};
-};
-
 export const getJobsUserAppliedFor = async (userId: string) => {
+	//👇 Fetch all applications for the user
 	const q = query(
 		collection(db, "applications"),
 		where("user.id", "==", userId)
 	);
 	const querySnapshot = await getDocs(q);
-	const applications: ApplicationProps[] = [];
-	querySnapshot.forEach((doc) => {
-		applications.push({ id: doc.id, ...doc.data() } as ApplicationProps);
-	});
+	const applications: ApplicationProps[] = querySnapshot.docs.map((doc) => ({
+		id: doc.id,
+		...doc.data(),
+	})) as ApplicationProps[];
 
-	const jobs: JobProps[] = [];
-	for (const application of applications) {
-		const jobRef = doc(db, "jobs", application.jobID);
-		const jobSnap = await getDoc(jobRef);
-		if (jobSnap.exists()) {
-			jobs.push({
-				doc_id: jobSnap.id,
-				...jobSnap.data(),
-				status: application.status,
-			} as JobProps);
-		}
-	}
+	if (applications.length === 0) return []; // Return empty array if no applications exist
+
+	//👇 Fetch all job documents in a single batch request
+	const jobIds = applications.map((app) => doc(db, "jobs", app.jobID));
+	const jobSnaps = await getDocs(query(collection(db, "jobs"), where("__name__", "in", jobIds.map((job) => job.id))));
+
+	const jobs: JobProps[] = jobSnaps.docs.map((doc) => {
+		const application = applications.find((app) => app.jobID === doc.id);
+		return {
+			doc_id: doc.id,
+			...doc.data(),
+			status: application?.status || "Unknown", // Ensure status is included
+		} as JobProps;
+	});
 
 	return jobs;
-};
-
-export const handleRejectApplication = async (
-	application: ApplicationProps
-) => {
-	const applicationRef = doc(db, "applications", application.id);
-	await deleteDoc(applicationRef);
-
-	const jobRef = doc(db, "jobs", application.jobID);
-	await updateDoc(jobRef, {
-		applications: arrayRemove({
-			applicationId: application.id,
-			userId: application.user.id,
-		}),
-	});
-
-	return {
-		code: "job/success",
-		status: 200,
-		message: "Application rejected successfully",
-	};
-};
-
-export const updateJobStatus = async (
-	applicationId: string,
-	status: ApplicationProps["status"]
-) => {
-	const applicationRef = doc(db, "applications", applicationId);
-	await updateDoc(applicationRef, { status });
-	return {
-		code: "job/success",
-		status: 200,
-		message: "Application status updated successfully",
-	};
 };

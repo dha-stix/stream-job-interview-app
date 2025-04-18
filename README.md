@@ -3,7 +3,7 @@ A Job and interview platform that lets recruiters post jobs and job applicants a
 Recruiters can also create virtual interview sessions and send direct messages to applicants on the app using Stream.
 
 ## Useful Links
-[Article explaining the project]()
+[Article explaining the project](https://getstream.io/blog/job-app-interview-platform/)
 
 ## Getting Started
 - Clone the GitHub repository.
